@@ -1,17 +1,16 @@
 __author__ = 'iravid'
 
 from ply import lex
-from ply.lex import TOKEN
 
 reserved_words = {
     "code": "CODE",
     "const": "CONST",
     "define": "DEFINE",
     "do": "DO",
-    "float": "FLOAT",
+    "float": "FLOATDECL",
     "from": "FROM",
     "if": "IF",
-    "int": "INT",
+    "int": "INTDECL",
     "ival": "IVAL",
     "otherwise": "OTHERWISE",
     "read": "READ",
@@ -25,7 +24,7 @@ reserved_words = {
     "or": "OR"
 }
 
-reserved_symbols = (
+reserved_symbols = [
     "LPAREN", "RPAREN",
     "LCURLPAREN", "RCURLPAREN",
     "COMMA",
@@ -34,14 +33,15 @@ reserved_symbols = (
     "EXCLAMATION",
     "PLUS", "MINUS",
     "MULT", "DIV",
-    "EQ", "NEQ", "LT", "LTE", "GT", "GTE"
+    "EQ", "NEQ", "LT", "LTE", "GT", "GTE",
     "ASSIGN"
-)
+]
 
-composed_tokens = (
+composed_tokens = [
     "ID",
-    "NUMBER"
-)
+    "INTEGER",
+    "FLOAT"
+]
 
 tokens = reserved_symbols + reserved_words.values() + composed_tokens
 
@@ -90,22 +90,11 @@ def t_INTEGER(t):
 
     return t
 
-# Comment handling
+# Ignore whitespace
+t_ignore = " \t\r\n"
 
-# Multiline comments are allowed, so define a state that the lexer will be switched into when '/*' is encountered
-states = (
-    "COMMENT", "exclusive"
-)
+def t_COMMENT(t):
+    r'//[^\n]*\n|/[*](.|\n)*?[*]/'
+    t.lexer.lineno += t.value.count('\n')
 
-# Comment start encountered - push COMMENT onto the state stack
-def t_start_comment(t):
-    r"/\*"
-    t.lexer.push_state("COMMENT")
-
-# Ignore all contents within comment
-t_COMMENT_contents = r".*"
-
-# Comment end encountered - pop state
-def t_end_comment(t):
-    r"\*/"
-    t.lexer.pop_state()
+lexer = lex.lex()
