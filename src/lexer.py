@@ -34,7 +34,7 @@ reserved_symbols = [
     "PLUS", "MINUS",
     "MULT", "DIV",
     "EQ", "NEQ", "LT", "LTE", "GT", "GTE",
-    "ASSIGN"
+    "ASSIGN", "CONSTASSIGN"
 ]
 
 composed_tokens = [
@@ -69,6 +69,7 @@ t_GT = r">"
 t_GTE = r">="
 
 t_ASSIGN = r":="
+t_CONSTASSIGN = r"="
 
 def t_ID(t):
     r"[a-zA-Z]([a-zA-Z]|[0-9])*"
@@ -91,7 +92,11 @@ def t_INTEGER(t):
     return t
 
 # Ignore whitespace
-t_ignore = " \t\r\n"
+t_ignore = " \t"
+
+def t_NEWLINE(t):
+    r"\n+"
+    t.lexer.lineno += t.value.count("\n")
 
 def t_COMMENT(t):
     r'//[^\n]*\n|/[*](.|\n)*?[*]/'
