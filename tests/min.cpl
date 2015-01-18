@@ -1,0 +1,15 @@
+code Min /* Finding minimum between two numbers */
+{
+   define float : a;
+            float:  b;
+
+
+   read (a);
+   read (b);
+ 
+   if (a < b) then  
+     write (a);
+   otherwise  
+     write (b); 
+}
+

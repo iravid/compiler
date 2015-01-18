@@ -1,0 +1,17 @@
+code Div
+{
+    define int : count, first;
+    int : second;
+
+
+     read (first);
+     read (second);
+     count := 0;
+    
+     while (first >= second) do {
+       first := first-second;
+       count := count+1;
+     }
+    
+     write (count);
+}

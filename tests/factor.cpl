@@ -1,0 +1,17 @@
+code Factorial  /* write factorial of a number */
+{
+  define int : a, i;
+	     int : fact;
+
+
+  read (a);
+  fact := 1;
+  
+  from (i := 1; 
+        to i <= a  
+		when  i := i + 1  do 
+	       fact := fact * i;
+
+  write (fact);
+}
+

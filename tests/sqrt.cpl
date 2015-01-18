@@ -1,0 +1,21 @@
+code Sqrt /* square root of a given number */
+{
+ define float: a, x,delta;
+          int: stop;
+		  const int zero = 0;
+
+
+      read (a);
+      x := a/2.0;
+      stop := 0;
+      
+      while(stop == zero) do {
+         x := x/2.0+a/(2.0*x);
+         delta :=  x*x-a;
+
+         if(delta < zero) then delta := zero - delta; otherwise { }
+         if (delta < 0.0001) then { stop := 1;} otherwise { }
+       }
+       write (a);
+       write (x);
+}

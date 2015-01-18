@@ -1,0 +1,24 @@
+code Primes   /* Prints all prime numbers between 2 to 38 */
+{
+  define int :   a, b; 
+            int: stop;
+            const int two = 2;
+            const int three = 3;			
+
+
+  write (two);
+  write (three);
+  a := 5;
+  
+  while(a <= 38) do {
+    b := 2;
+    stop := 1;
+
+    while(b < stop*a/2) do {
+       if (a/b * b==a) then { stop := 0;} otherwise { }
+       b := b + 1;
+    }
+    if (stop == 1) then{ write(a);} otherwise { }
+    a := a+2;
+  }
+}

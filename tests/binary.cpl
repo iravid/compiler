@@ -1,0 +1,25 @@
+code Binary  /*convert from decimal to binary */
+{
+    define int : a, b;
+	    int : temp, ten;
+
+    b := 0;
+    
+    while (b == 0) do {
+     read (a);
+     if(a > 0 and a <= 1000) then 
+	    { b := 1;}
+     otherwise { }
+    }
+
+    ten := 1;
+    b := 0;
+    
+    while (a > 0) do {
+      temp := a-a/2*2;
+      b := b + temp * ten;
+      ten := ten * 10;
+      a := a / 2;
+    }
+    write (b);
+}
