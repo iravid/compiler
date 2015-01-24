@@ -1,6 +1,7 @@
 __author__ = 'iravid'
 
 import ast
+from ply import yacc
 from lexer import tokens
 
 def p_program(p):
@@ -197,3 +198,9 @@ def p_factor(p):
             p[0] = ast.NIdentifier(p[1])
         else:
             p[0] = p[1]
+
+def p_empty(p):
+    """empty : """
+    pass
+
+parser = yacc.yacc()
