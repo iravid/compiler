@@ -15,9 +15,7 @@ def p_declarelist(p):
     """declarelist : declarelist type COLON idents
                     | type COLON idents
                     | declarelist ctype ID CONSTASSIGN number SEMICOLON
-                    | declarelist ctype ID CONSTASSIGN number SEMICOLON
-                    | ctype ID CONSTASSIGN INTEGER SEMICOLON
-                    | ctype ID CONSTASSIGN FLOAT SEMICOLON"""
+                    | ctype ID CONSTASSIGN number SEMICOLON"""
     pass
 
 def p_number(p):
@@ -38,18 +36,22 @@ def p_type(p):
             | FLOATDECL"""
     pass
 
-def p_stmtlist(p):
-    """stmtlist : stmtlist stmt
+def p_stmt_list(p):
+    """stmt_list : stmt_list stmt
                 | empty"""
     pass
 
 def p_stmt(p):
     """stmt : assignment_stmt
-            | val
+            | type_conversion_stmt
             | control_stmt
             | read_stmt
             | write_stmt
             | stmt_block"""
+    pass
+
+def p_stmt_block(p):
+    """stmt_block : LCURLPAREN stmt_list RCURLPAREN"""
     pass
 
 def p_write_stmt(p):
@@ -64,9 +66,9 @@ def p_assignment_stmt(p):
     "assignment_stmt : ID ASSIGN expression SEMICOLON"
     pass
 
-def p_val(p):
-    """val : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
-           | ID ASSIGN RVAL LPAREN expression RPAREN SEMICOLON"""
+def p_type_conversion_stmt(p):
+    """type_conversion_stmt : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
+                            | ID ASSIGN RVAL LPAREN expression RPAREN SEMICOLON"""
     pass
 
 def p_control_stmt(p):
