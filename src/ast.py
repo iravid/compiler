@@ -58,21 +58,33 @@ class NIdentifier(NExpression):
     def __init__(self, ident):
         self.ident = ident
 
+    def __repr__(self):
+        return "<NIdentifier \"%s\">" % self.ident
+
 class NInteger(NExpression):
     def __init__(self, value):
         assert(type(value) in (int, long))
         self.value = value
+
+    def __repr__(self):
+        return "<NInteger %d>" % self.value
 
 class NFloat(NExpression):
     def __init__(self, value):
         assert(type(value) is float)
         self.value = value
 
+    def __repr__(self):
+        return "<NFloat %d>" % self.value
+
 class NProgram(Node):
     def __init__(self, program_name, declare_list, statement_list):
         self.program_name = program_name
         self.declare_list = declare_list
         self.statement_list = statement_list
+
+    def __repr__(self):
+        return "<NProgram \"%s\">" % self.program_name
 
 class NDeclareList(Node):
     def __init__(self, var_list, const_list):
@@ -84,11 +96,17 @@ class NVarDecl(Node):
         self.var_type = var_type
         self.ident_list = ident_list
 
+    def __repr__(self):
+        return "<NVarDecl, type \"%s\", idents %s" % (self.var_type, self.ident_list)
+
 class NConstDecl(Node):
     def __init__(self, const_type, const_ident, const_value):
         self.const_type = const_type
         self.const_ident = const_ident
         self.const_value = const_value
+
+    def __repr__(self):
+        return "<NConstDecl, type \"%s\", ident \"%s\", value %s" % (self.const_type, self.const_ident, self.const_value)
 
 class NStatement(Node):
     pass

@@ -30,9 +30,9 @@ def p_declarelist_constlist(p):
     """declarelist : declarelist ctype ID CONSTASSIGN number SEMICOLON
                    | ctype ID CONSTASSIGN number SEMICOLON"""
     if len(p) == 6:
-        p[0] = [ast.NConstDecl(p[1], p[2], p[5])]
+        p[0] = [ast.NConstDecl(p[1], p[2], p[4])]
     elif len(p) == 7:
-        p[1].append(ast.NConstDecl(p[2], p[3], p[6]))
+        p[1].append(ast.NConstDecl(p[2], p[3], p[5]))
         p[0] = p[1]
 
 def p_number(p):
