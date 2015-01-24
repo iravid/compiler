@@ -65,7 +65,8 @@ class NFloat(NExpression):
         self.value = value
 
 class NProgram(Node):
-    def __init__(self, declare_list, statement_list):
+    def __init__(self, program_name, declare_list, statement_list):
+        self.program_name = program_name
         self.declare_list = declare_list
         self.statement_list = statement_list
 
@@ -80,9 +81,10 @@ class NVarDecl(Node):
         self.ident_list = ident_list
 
 class NConstDecl(Node):
-    def __init__(self, const_type, const_ident):
+    def __init__(self, const_type, const_ident, const_value):
         self.const_type = const_type
         self.const_ident = const_ident
+        self.const_value = const_value
 
 class NStatement(Node):
     pass

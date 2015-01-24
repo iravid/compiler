@@ -1,40 +1,65 @@
 __author__ = 'iravid'
 
+import ast
 from lexer import tokens
 
 def p_program(p):
     "program : CODE ID LCURLPAREN declarations stmtlist RCURLPAREN"
-    pass
+    p[0] = ast.NProgram(p[2], p[4], p[5])
 
 def p_declarations(p):
     """declarations : DEFINE declarelist
                   | empty"""
-    pass
+    if len(p) == 3:
+        p[0] = ast.NDeclareList(filter(lambda d: isinstance(d, ast.NVarDecl), p[2]),
+                                filter(lambda d: isinstance(d, ast.NConstDecl), p[2]))
+    else:
+        p[0] = ast.NDeclareList([], [])
 
-def p_declarelist(p):
-    """declarelist : declarelist type COLON idents
-                    | type COLON idents
-                    | declarelist ctype ID CONSTASSIGN number SEMICOLON
-                    | ctype ID CONSTASSIGN number SEMICOLON"""
-    pass
+def p_declarelist_varlist(p):
+    """declarelist : declarelist type COLON idents SEMICOLON
+                   | type COLON idents SEMICOLON"""
+    if len(p) == 5:
+        p[0] = [ast.NVarDecl(p[1], p[3])]
+    elif len(p) == 6:
+        p[1].append(ast.NVarDecl(p[2], p[4]))
+        p[0] = p[1]
+
+def p_declarelist_constlist(p):
+    """declarelist : declarelist ctype ID CONSTASSIGN number SEMICOLON
+                   | ctype ID CONSTASSIGN number SEMICOLON"""
+    if len(p) == 6:
+        p[0] = [ast.NConstDecl(p[1], p[2], p[5])]
+    elif len(p) == 7:
+        p[1].append(ast.NConstDecl(p[2], p[3], p[6]))
+        p[0] = p[1]
 
 def p_number(p):
     """number : INTEGER
               | FLOAT"""
-    pass
+    if type(p[1]) is float:
+        p[0] = ast.NFloat(p[1])
+    elif type(p[1]) in (int, long):
+        p[0] = ast.NInteger(p[1])
+
 
 def p_idents(p):
-    """idents : ID COMMA idents
-              | ID SEMICOLON"""
-    pass
+    """idents : idents COMMA ID
+              | ID"""
+    if len(p) == 2:
+        p[0] = [ast.NIdentifier(p[1])]
+    elif len(p) == 4:
+        p[1].append(ast.NIdentifier(p[3]))
+        p[0] = p[1]
 
 def p_ctype(p):
     "ctype : CONST type"
+    p[0] = p[2]
 
 def p_type(p):
     """type : INTDECL
             | FLOATDECL"""
-    pass
+    p[0] = p[1]
 
 def p_stmt_list(p):
     """stmt_list : stmt_list stmt
