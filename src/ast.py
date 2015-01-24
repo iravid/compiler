@@ -34,7 +34,7 @@ class NRelExpression(NExpression):
         self.lhs = lhs
         self.rhs = rhs
 
-class NAndStatement(NExpression):
+class NAndExpression(NExpression):
     """
     expression AND expression
     """
@@ -42,13 +42,17 @@ class NAndStatement(NExpression):
         self.lhs = lhs
         self.rhs = rhs
 
-class NOrStatement(NExpression):
+class NOrExpression(NExpression):
     """
     expression OR expression
     """
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+
+class NNegationExpression(NExpression):
+    def __init__(self, expression):
+        self.expression = expression
 
 class NIdentifier(NExpression):
     def __init__(self, ident):

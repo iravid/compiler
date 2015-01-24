@@ -4,7 +4,7 @@ import ast
 from lexer import tokens
 
 def p_program(p):
-    "program : CODE ID LCURLPAREN declarations stmtlist RCURLPAREN"
+    "program : CODE ID LCURLPAREN declarations stmt_list RCURLPAREN"
     p[0] = ast.NProgram(p[2], p[4], p[5])
 
 def p_declarations(p):
@@ -64,7 +64,11 @@ def p_type(p):
 def p_stmt_list(p):
     """stmt_list : stmt_list stmt
                 | empty"""
-    pass
+    if len(p) == 3:
+        p[1].extend(p[2])
+        p[0] = p[1]
+    else:
+        p[0] = []
 
 def p_stmt(p):
     """stmt : assignment_stmt
@@ -73,64 +77,89 @@ def p_stmt(p):
             | read_stmt
             | write_stmt
             | stmt_block"""
-    pass
+    if type(p[1]) == list:
+        p[0] = p[1]
+    else:
+        p[0] = [p[1]]
 
 def p_stmt_block(p):
     """stmt_block : LCURLPAREN stmt_list RCURLPAREN"""
-    pass
+    p[0] = p[2]
 
 def p_write_stmt(p):
     "write_stmt : WRITE LPAREN expression RPAREN SEMICOLON"
-    pass
+    p[0] = ast.NWriteStatement(p[3])
 
 def p_read_stmt(p):
     "read_stmt : READ LPAREN ID RPAREN SEMICOLON"
-    pass
+    p[0] = ast.NReadStatement(p[3])
 
 def p_assignment_stmt(p):
     "assignment_stmt : ID ASSIGN expression SEMICOLON"
-    pass
+    p[0] = ast.NAssignStatement(p[1], p[3])
 
 def p_type_conversion_stmt(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
                             | ID ASSIGN RVAL LPAREN expression RPAREN SEMICOLON"""
-    pass
+    if p[3] == "ival":
+        p[0] = ast.NTypeConversionStatement(p[1], "int", p[5])
+    elif p[3] == "rval":
+        p[0] = ast.NTypeConversionStatement(p[1], "float", p[5])
 
 def p_control_stmt(p):
     """control_stmt : IF LPAREN boolexpr RPAREN THEN stmt OTHERWISE stmt
                     | WHILE LPAREN boolexpr RPAREN DO stmt
                     | FROM assignment_stmt TO boolexpr WHEN step DO stmt"""
-    pass
+    if p[1] == "if":
+        p[0] = ast.NIfStatement(p[3], p[6], p[8])
+    elif p[1] == "while":
+        p[0] = ast.NWhileStatement(p[3], p[6])
+    elif p[1] == "from":
+        p[0] = ast.NFromStatement(p[2], p[4], p[6], p[8])
 
 def p_step(p):
     """step : ID ASSIGN ID addop number
             | ID ASSIGN ID mulop number"""
-    pass
+    if p[4] in ("+", "-"):
+        expr = ast.NAddExpression(p[4], p[3], p[5])
+    else:
+        expr = ast.NMultExpression(p[4], p[3], p[5])
+
+    p[0] = ast.NAssignStatement(p[1], expr)
 
 def p_addop(p):
     """addop : PLUS
              | MINUS"""
-    pass
+    p[0] = p[1]
 
 def p_mulop(p):
     """mulop : MULT
              | DIV"""
-    pass
+    p[0] = p[1]
 
 def p_boolexpr(p):
     """boolexpr : boolexpr OR boolterm
                 | boolterm"""
-    pass
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4:
+        p[0] = ast.NOrExpression(p[1], p[3])
 
 def p_boolterm(p):
     """boolterm : boolterm AND boolfactor
                 | boolfactor"""
-    pass
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4:
+        p[0] = ast.NAndExpression(p[1], p[3])
 
 def p_boolfactor(p):
-    """boolfactor : EXCLAMATION LPAREN boolfactor RPAREN
+    """boolfactor : EXCLAMATION LPAREN boolexpr RPAREN
                   | expression relop expression"""
-    pass
+    if len(p) == 5:
+        p[0] = ast.NNegationExpression(p[3])
+    elif len(p) == 4:
+        p[0] = ast.NRelExpression(p[2], p[1], p[3])
 
 def p_relop(p):
     """relop : EQ
@@ -139,20 +168,32 @@ def p_relop(p):
              | LTE
              | GT
              | GTE"""
-    pass
+    p[0] = p[1]
 
 def p_expression(p):
     """expression : expression addop term
                   | term"""
-    pass
+    if len(p) == 4:
+        p[0] = ast.NAddExpression(p[2], p[1], p[3])
+    elif len(p) == 2:
+        p[0] = p[1]
 
 def p_term(p):
     """term : term mulop factor
             | factor"""
-    pass
+    if len(p) == 4:
+        p[0] = ast.NMultExpression(p[2], p[1], p[3])
+    elif len(p) == 2:
+        p[0] = p[1]
 
 def p_factor(p):
     """factor : LPAREN expression RPAREN
               | ID
               | number"""
-    pass
+    if len(p) == 4:
+        p[0] = p[2]
+    else:
+        if type(p[1]) is str:
+            p[0] = ast.NIdentifier(p[1])
+        else:
+            p[0] = p[1]
