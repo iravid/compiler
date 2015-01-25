@@ -6,23 +6,29 @@ class Node(object):
 class NExpression(Node):
     pass
 
-class NAddExpression(NExpression):
-    """
-    expression PLUS/MINUS expression
-    """
+class NBinaryExpression(NExpression):
     def __init__(self, op, lhs, rhs):
+        self.expr_type = "float" if "float" in (lhs.expr_type, rhs.expr_type) else "int"
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
 
-class NMultExpression(NExpression):
+
+class NAddExpression(NBinaryExpression):
+    """
+    expression PLUS/MINUS expression
+    """
+    def __init__(self, op, lhs, rhs):
+        NBinaryExpression.__init__(self, op, lhs, rhs)
+
+
+class NMultExpression(NBinaryExpression):
     """
     expression MULT/DIV expression
     """
     def __init__(self, op, lhs, rhs):
-        self.op = op
-        self.lhs = lhs
-        self.rhs = rhs
+        NBinaryExpression.__init__(self, op, lhs, rhs)
+
 
 class NRelExpression(NExpression):
     """
@@ -32,6 +38,7 @@ class NRelExpression(NExpression):
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
+        self.expr_type = "int"
 
 class NAndExpression(NExpression):
     """
@@ -40,6 +47,7 @@ class NAndExpression(NExpression):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self.expr_type = "int"
 
 class NOrExpression(NExpression):
     """
@@ -48,15 +56,17 @@ class NOrExpression(NExpression):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self.expr_type = "int"
 
 class NNegationExpression(NExpression):
     def __init__(self, expression):
         self.expression = expression
+        self.expr_type = expression.expr_type
 
 class NIdentifier(NExpression):
     def __init__(self, ident_type, ident):
-        self.ident_type = ident_type
         self.ident = ident
+        self.expr_type = ident_type
 
     def __repr__(self):
         return "<NIdentifier \"%s\">" % self.ident
@@ -65,7 +75,7 @@ class NInteger(NExpression):
     def __init__(self, value):
         assert(type(value) in (int, long))
         self.value = value
-        self.type = "int"
+        self.expr_type = "int"
 
     def __repr__(self):
         return "<NInteger %d>" % self.value
@@ -74,7 +84,7 @@ class NFloat(NExpression):
     def __init__(self, value):
         assert(type(value) is float)
         self.value = value
-        self.type = "float"
+        self.expr_type = "float"
 
     def __repr__(self):
         return "<NFloat %d>" % self.value
