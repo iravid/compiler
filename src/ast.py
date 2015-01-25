@@ -1,8 +1,7 @@
 __author__ = 'iravid'
 
 class Node(object):
-    def __init__(self):
-        pass
+    pass
 
 class NExpression(Node):
     pass
@@ -55,7 +54,8 @@ class NNegationExpression(NExpression):
         self.expression = expression
 
 class NIdentifier(NExpression):
-    def __init__(self, ident):
+    def __init__(self, ident_type, ident):
+        self.ident_type = ident_type
         self.ident = ident
 
     def __repr__(self):
@@ -65,6 +65,7 @@ class NInteger(NExpression):
     def __init__(self, value):
         assert(type(value) in (int, long))
         self.value = value
+        self.type = "int"
 
     def __repr__(self):
         return "<NInteger %d>" % self.value
@@ -73,6 +74,7 @@ class NFloat(NExpression):
     def __init__(self, value):
         assert(type(value) is float)
         self.value = value
+        self.type = "float"
 
     def __repr__(self):
         return "<NFloat %d>" % self.value

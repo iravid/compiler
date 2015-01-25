@@ -3,10 +3,12 @@ __author__ = 'iravid'
 import ast
 from ply import yacc
 from lexer import tokens
+from codegen import context
 
 def p_program(p):
     "program : CODE ID LCURLPAREN declarations stmt_list RCURLPAREN"
     p[0] = ast.NProgram(p[2], p[4], p[5])
+    context.root = p[0]
 
 def p_declarations(p):
     """declarations : DEFINE declarelist
@@ -21,17 +23,28 @@ def p_declarelist_varlist(p):
     """declarelist : declarelist type COLON idents SEMICOLON
                    | type COLON idents SEMICOLON"""
     if len(p) == 5:
+        # Install symbols for each ident
+        for ident in p[3]:
+            context.install_symbol(ident, ast.NIdentifier(p[1], ident))
+
         p[0] = [ast.NVarDecl(p[1], p[3])]
+
     elif len(p) == 6:
+        for ident in p[4]:
+            context.install_symbol(ident, ast.NIdentifier(p[2], ident))
+
         p[1].append(ast.NVarDecl(p[2], p[4]))
         p[0] = p[1]
+
 
 def p_declarelist_constlist(p):
     """declarelist : declarelist ctype ID CONSTASSIGN number SEMICOLON
                    | ctype ID CONSTASSIGN number SEMICOLON"""
     if len(p) == 6:
+        context.install_symbol(p[2], p[4])
         p[0] = [ast.NConstDecl(p[1], p[2], p[4])]
     elif len(p) == 7:
+        context.install_symbol(p[3], p[5])
         p[1].append(ast.NConstDecl(p[2], p[3], p[5]))
         p[0] = p[1]
 
@@ -43,14 +56,13 @@ def p_number(p):
     elif type(p[1]) in (int, long):
         p[0] = ast.NInteger(p[1])
 
-
 def p_idents(p):
     """idents : idents COMMA ID
               | ID"""
     if len(p) == 2:
-        p[0] = [ast.NIdentifier(p[1])]
+        p[0] = [p[1]]
     elif len(p) == 4:
-        p[1].append(ast.NIdentifier(p[3]))
+        p[1].append(p[3])
         p[0] = p[1]
 
 def p_ctype(p):
@@ -93,19 +105,23 @@ def p_write_stmt(p):
 
 def p_read_stmt(p):
     "read_stmt : READ LPAREN ID RPAREN SEMICOLON"
-    p[0] = ast.NReadStatement(p[3])
+    # TODO: check that the symbol is a variable and not a constant
+    p[0] = ast.NReadStatement(context.get_symbol(p[3]))
 
 def p_assignment_stmt(p):
     "assignment_stmt : ID ASSIGN expression SEMICOLON"
-    p[0] = ast.NAssignStatement(p[1], p[3])
+    # TODO: check that the symbol is a variable and not a constant
+    p[0] = ast.NAssignStatement(context.get_symbol(p[1]), p[3])
 
 def p_type_conversion_stmt(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
                             | ID ASSIGN RVAL LPAREN expression RPAREN SEMICOLON"""
+    symbol = context.get_symbol(p[1])
+
     if p[3] == "ival":
-        p[0] = ast.NTypeConversionStatement(p[1], "int", p[5])
+        p[0] = ast.NTypeConversionStatement(symbol, "int", p[5])
     elif p[3] == "rval":
-        p[0] = ast.NTypeConversionStatement(p[1], "float", p[5])
+        p[0] = ast.NTypeConversionStatement(symbol, "float", p[5])
 
 def p_control_stmt(p):
     """control_stmt : IF LPAREN boolexpr RPAREN THEN stmt OTHERWISE stmt
@@ -121,12 +137,17 @@ def p_control_stmt(p):
 def p_step(p):
     """step : ID ASSIGN ID addop number
             | ID ASSIGN ID mulop number"""
-    if p[4] in ("+", "-"):
-        expr = ast.NAddExpression(p[4], p[3], p[5])
-    else:
-        expr = ast.NMultExpression(p[4], p[3], p[5])
 
-    p[0] = ast.NAssignStatement(p[1], expr)
+    # TODO: type check the lhs symbol
+    lhs_symbol = context.get_symbol(p[1])
+    rhs_symbol = context.get_symbol(p[3])
+
+    if p[4] in ("+", "-"):
+        expr = ast.NAddExpression(p[4], rhs_symbol, p[5])
+    else:
+        expr = ast.NMultExpression(p[4], rhs_symbol, p[5])
+
+    p[0] = ast.NAssignStatement(lhs_symbol, expr)
 
 def p_addop(p):
     """addop : PLUS
@@ -195,7 +216,7 @@ def p_factor(p):
         p[0] = p[2]
     else:
         if type(p[1]) is str:
-            p[0] = ast.NIdentifier(p[1])
+            p[0] = context.get_symbol(p[1])
         else:
             p[0] = p[1]
 
