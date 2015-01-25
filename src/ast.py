@@ -4,6 +4,7 @@ class Node(object):
     pass
 
 class NExpression(Node):
+    # TODO: Codegen interface for expressions should return (output_variable_name, code)
     pass
 
 class NBinaryExpression(NExpression):
@@ -71,6 +72,16 @@ class NIdentifier(NExpression):
     def __repr__(self):
         return "<NIdentifier \"%s\">" % self.ident
 
+    def codegen(self, context):
+        output_var = context.get_temp_var()
+
+        if self.expr_type == "int":
+            code = "IASN %s %s\n" % (output_var, self.ident)
+        else:
+            code = "RASN %s %s\n" % (output_var, self.ident)
+
+        return (output_var, code)
+
 class NInteger(NExpression):
     def __init__(self, value):
         assert(type(value) in (int, long))
@@ -80,6 +91,12 @@ class NInteger(NExpression):
     def __repr__(self):
         return "<NInteger %d>" % self.value
 
+    def codegen(self, context):
+        output_var = context.get_temp_var()
+        code = "IASN %s %d\n" % (output_var, self.value)
+
+        return (output_var, code)
+
 class NFloat(NExpression):
     def __init__(self, value):
         assert(type(value) is float)
@@ -88,6 +105,12 @@ class NFloat(NExpression):
 
     def __repr__(self):
         return "<NFloat %d>" % self.value
+
+    def codegen(self, context):
+        output_var = context.get_temp_var()
+        code = "RASN %s %d\n" % (output_var, self.value)
+
+        return (output_var, code)
 
 class NProgram(Node):
     def __init__(self, program_name, declare_list, statement_list):
@@ -128,19 +151,56 @@ class NAssignStatement(NStatement):
         self.ident = ident
         self.expression = expression
 
+    def codegen(self, context):
+        expr_output, expr_code = self.expression.codegen(context)
+
+        # This assumes that incorrect assignments (int := float) have been discarded in the parsing stage
+        if self.ident.expr_type == "int":
+            return expr_code + "IASN %s %s\n" % (self.ident.ident, expr_output)
+        else:
+            if self.expression.expr_type == "float":
+                return expr_code + "RASN %s %s\n" % (self.ident.ident, expr_output)
+            else:
+                # float := int assignment means we have to perform an ITOR on the expr_output
+                return expr_code + "ITOR %s %s\n" % (self.expr_output, self.expr_output) \
+                                 + "RASN %s %s\n" % (self.ident.ident, self.expr_output)
+
 class NWriteStatement(NStatement):
     def __init__(self, expression):
         self.expression = expression
 
+    def codegen(self, context):
+        expr_output, expr_code = self.expression.codegen(context)
+
+        if self.expression.expr_type == "int":
+            return expr_code + ("IPRT %s\n" % expr_output)
+        else:
+            return expr_code + ("RPRT %s\n" % expr_output)
+
 class NReadStatement(NStatement):
     def __init__(self, ident):
         self.ident = ident
+
+    def codegen(self, context):
+        if self.ident.expr_type == "int":
+            return "IINP %s\n" % self.ident.ident
+        else:
+            return "RINP %s\n" % self.ident.ident
 
 class NTypeConversionStatement(NStatement):
     def __init__(self, ident, dest_type, expression):
         self.ident = ident
         self.dest_type = dest_type
         self.expression = expression
+
+    def codegen(self, context):
+        expr_output, expr_code = self.expression.codegen(context)
+
+        if self.dest_type == "int":
+            return expr_code + "RTOI %s %s\n" % (self.ident.ident, expr_output)
+        else:
+            return expr_code + "ITOR %s %s\n" % (self.ident.ident, expr_output)
+
 
 class NIfStatement(NStatement):
     def __init__(self, test_expression, then_statements, otherwise_statements):
