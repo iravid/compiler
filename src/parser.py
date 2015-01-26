@@ -181,7 +181,18 @@ def p_boolfactor(p):
     if len(p) == 5:
         p[0] = ast.NNegationExpression(p[3])
     elif len(p) == 4:
-        p[0] = ast.NRelExpression(p[2], p[1], p[3])
+        # Quad doesn't support GTE and LTE, so we'll convert the expression
+        # to (lhs RELOP rhs) OR (lhs == rhs).
+        if p[2] in (">=", "<="):
+            relop_map = {">=": ">", "<=": "<"}
+
+            eq_exp = ast.NRelExpression("==", p[1], p[3])
+            relop_exp = ast.NRelExpression(relop_map[p[2]], p[1], p[3])
+
+            p[0] = ast.NOrExpression(relop_exp, eq_exp)
+
+        else:
+            p[0] = ast.NRelExpression(p[2], p[1], p[3])
 
 def p_relop(p):
     """relop : EQ

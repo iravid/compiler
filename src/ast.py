@@ -8,11 +8,60 @@ class NExpression(Node):
     pass
 
 class NBinaryExpression(NExpression):
+    op_inst_map = {
+        "+": ("IADD", "RADD"),
+        "-": ("ISUB", "RSUB"),
+        "*": ("IMLT", "RMLT"),
+        "/": ("IDIV", "RDIV")
+    }
+
     def __init__(self, op, lhs, rhs):
         self.expr_type = "float" if "float" in (lhs.expr_type, rhs.expr_type) else "int"
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
+
+    def codegen(self, context):
+        lhs_output, lhs_code = self.lhs.codegen(context)
+        rhs_output, rhs_code = self.rhs.codegen(context)
+
+        if self.lhs.expr_type == "int" and self.rhs.expr_type == "int":
+            code = lhs_code + rhs_code
+            output = context.get_temp_var()
+
+            inst = NBinaryExpression.op_inst_map[self.op][0]
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
+        elif self.lhs.expr_type == "float" and self.rhs.expr_type == "float":
+            code = lhs_code + rhs_code
+            output = context.get_temp_var()
+
+            inst = NBinaryExpression.op_inst_map[self.op][1]
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
+        elif self.lhs.expr_type == "int" and self.rhs.expr_type == "float":
+            code = lhs_code + rhs_code
+            code += "ITOR %s %s\n" % (lhs_output, lhs_output)
+            output = context.get_temp_var()
+
+            inst = NBinaryExpression.op_inst_map[self.op][1]
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+        elif self.lhs.expr_type == "float" and self.rhs.expr_type == "int":
+            code = lhs_code + rhs_code
+            code += "ITOR %s %s\n" % (rhs_output, rhs_output)
+            output = context.get_temp_var()
+
+            inst = NBinaryExpression.op_inst_map[self.op][1]
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
 
 
 class NAddExpression(NBinaryExpression):
@@ -22,6 +71,9 @@ class NAddExpression(NBinaryExpression):
     def __init__(self, op, lhs, rhs):
         NBinaryExpression.__init__(self, op, lhs, rhs)
 
+    def codegen(self, context):
+        return NBinaryExpression.codegen(self, context)
+
 
 class NMultExpression(NBinaryExpression):
     """
@@ -30,16 +82,71 @@ class NMultExpression(NBinaryExpression):
     def __init__(self, op, lhs, rhs):
         NBinaryExpression.__init__(self, op, lhs, rhs)
 
+    def codegen(self, context):
+        return NBinaryExpression.codegen(self, context)
 
 class NRelExpression(NExpression):
     """
-    expression </>/<=/>=/==/!= expression
+    expression </>/==/!= expression
     """
+    op_inst_map = {
+        "==": ["IEQL", "REQL"],
+        "!=": ["INQL", "RNQL"],
+        "<": ["ILSS", "RLSS"],
+        ">": ["IGRT", "RGRT"]
+    }
+
     def __init__(self, op, lhs, rhs):
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
         self.expr_type = "int"
+
+    def codegen(self, context):
+        lhs_output, lhs_code = self.lhs.codegen(context)
+        rhs_output, rhs_code = self.rhs.codegen(context)
+
+        if self.lhs.expr_type == "int" and self.rhs.expr_type == "int":
+            code = lhs_code + rhs_code
+            output = context.get_temp_var()
+
+            inst = NRelExpression.op_inst_map[self.op][0]
+            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
+        elif self.lhs.expr_type == "float" and self.rhs.expr_type == "float":
+            code = lhs_code + rhs_code
+            output = context.get_temp_var()
+
+            inst = NRelExpression.op_inst_map[self.op][1]
+            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
+        elif self.lhs.expr_type == "int" and self.rhs.expr_type == "float":
+            code = lhs_code + rhs_code
+            code += "ITOR %s %s" % (lhs_output, lhs_output)
+
+            output = context.get_temp_var()
+
+            inst = NRelExpression.op_inst_map[self.op][1]
+            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
+        elif self.lhs.expr_type == "float" and self.rhs.expr_type == "int":
+            code = lhs_code + rhs_code
+            code += "ITOR %s %s" % (rhs_output, rhs_output)
+
+            output = context.get_temp_var()
+
+            inst = NRelExpression.op_inst_map[self.op][1]
+            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+
+            return (output, code)
+
+
 
 class NAndExpression(NExpression):
     """
