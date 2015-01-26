@@ -111,7 +111,7 @@ class NRelExpression(NExpression):
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][0]
-            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
 
             return (output, code)
 
@@ -120,29 +120,29 @@ class NRelExpression(NExpression):
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
 
             return (output, code)
 
         elif self.lhs.expr_type == "int" and self.rhs.expr_type == "float":
             code = lhs_code + rhs_code
-            code += "ITOR %s %s" % (lhs_output, lhs_output)
+            code += "ITOR %s %s\n" % (lhs_output, lhs_output)
 
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
 
             return (output, code)
 
         elif self.lhs.expr_type == "float" and self.rhs.expr_type == "int":
             code = lhs_code + rhs_code
-            code += "ITOR %s %s" % (rhs_output, rhs_output)
+            code += "ITOR %s %s\n" % (rhs_output, rhs_output)
 
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s" % (inst, output, lhs_output, rhs_output)
+            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
 
             return (output, code)
 
@@ -157,6 +157,20 @@ class NAndExpression(NExpression):
         self.rhs = rhs
         self.expr_type = "int"
 
+    def codegen(self, context):
+        lhs_output, lhs_code = self.lhs.codegen(context)
+        rhs_output, rhs_code = self.rhs.codegen(context)
+
+        add_output = context.get_temp_var()
+        add_code = "IADD %s %s %s\n" % (add_output, lhs_output, rhs_output)
+
+        and_output = context.get_temp_var()
+        and_code = "IEQL %s %s %d\n" % (and_output, add_output, 2)
+
+        code = lhs_code + rhs_code + add_code + and_code
+
+        return (and_output, code)
+
 class NOrExpression(NExpression):
     """
     expression OR expression
@@ -166,10 +180,36 @@ class NOrExpression(NExpression):
         self.rhs = rhs
         self.expr_type = "int"
 
+    def codegen(self, context):
+        lhs_output, lhs_code = self.lhs.codegen(context)
+        rhs_output, rhs_code = self.rhs.codegen(context)
+
+        add_output = context.get_temp_var()
+        add_code = "IADD %s %s %s\n" % (add_output, lhs_output, rhs_output)
+
+        or_output = context.get_temp_var()
+        or_code = "IGRT %s %s %d\n" % (or_output, add_output, 0)
+
+        code = lhs_code + rhs_code + add_code + or_code
+
+        return (or_output, code)
+
 class NNegationExpression(NExpression):
     def __init__(self, expression):
         self.expression = expression
         self.expr_type = expression.expr_type
+
+    def codegen(self, context):
+        expr_output, expr_code = self.expression.codegen(context)
+
+        output = context.get_temp_var()
+
+        if self.expression.expr_type == "int":
+            code = expr_code + "ISUB %s %d %s" % (output, 0, expr_output)
+        elif self.expression.expr_type == "float":
+            code = expr_code + "RSUB %s %d %s" % (output, 0, expr_output)
+
+        return (output, code)
 
 class NIdentifier(NExpression):
     def __init__(self, ident_type, ident):
