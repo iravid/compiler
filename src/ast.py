@@ -1,5 +1,7 @@
 __author__ = 'iravid'
 
+from codegen import QuadInstruction
+
 class Node(object):
     pass
 
@@ -22,45 +24,42 @@ class NBinaryExpression(NExpression):
         self.rhs = rhs
 
     def codegen(self, context):
-        lhs_output, lhs_code = self.lhs.codegen(context)
-        rhs_output, rhs_code = self.rhs.codegen(context)
+        # Generate code for lhs and rhs expressions
+        lhs_index = self.lhs.codegen(context)
+        rhs_index = self.rhs.codegen(context)
 
+        # Retrieve the temporary variable names
+        lhs_output = context.get_instruction(lhs_index).a
+        rhs_output = context.get_instruction(rhs_index).a
+
+        # Generate code according to expression types
         if self.lhs.expr_type == "int" and self.rhs.expr_type == "int":
-            code = lhs_code + rhs_code
             output = context.get_temp_var()
 
             inst = NBinaryExpression.op_inst_map[self.op][0]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, lhs_output, rhs_output))
 
         elif self.lhs.expr_type == "float" and self.rhs.expr_type == "float":
-            code = lhs_code + rhs_code
             output = context.get_temp_var()
 
             inst = NBinaryExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, lhs_output, rhs_output))
 
         elif self.lhs.expr_type == "int" and self.rhs.expr_type == "float":
-            code = lhs_code + rhs_code
-            code += "ITOR %s %s\n" % (lhs_output, lhs_output)
+            conversion_output = context.get_temp_var()
+            context.append_instruction(QuadInstruction("ITOR", conversion_output, lhs_output))
             output = context.get_temp_var()
 
             inst = NBinaryExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
+            return context.append_instruction(QuadInstruction(inst, output, conversion_output, rhs_output))
 
-            return (output, code)
         elif self.lhs.expr_type == "float" and self.rhs.expr_type == "int":
-            code = lhs_code + rhs_code
-            code += "ITOR %s %s\n" % (rhs_output, rhs_output)
+            conversion_output = context.get_temp_var()
+            context.append_instruction(QuadInstruction("ITOR", conversion_output, rhs_output))
             output = context.get_temp_var()
 
             inst = NBinaryExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, lhs_output, conversion_output))
 
 
 
@@ -103,48 +102,42 @@ class NRelExpression(NExpression):
         self.expr_type = "int"
 
     def codegen(self, context):
-        lhs_output, lhs_code = self.lhs.codegen(context)
-        rhs_output, rhs_code = self.rhs.codegen(context)
+        # Generate code for lhs and rhs expressions
+        lhs_index = self.lhs.codegen(context)
+        rhs_index = self.rhs.codegen(context)
 
+        # Retrieve output variable names for the expressions
+        lhs_output = context.get_instruction(lhs_index).a
+        rhs_output = context.get_instruction(rhs_index).a
+
+        # Generate code according to expression types
         if self.lhs.expr_type == "int" and self.rhs.expr_type == "int":
-            code = lhs_code + rhs_code
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][0]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, lhs_output, rhs_output))
 
         elif self.lhs.expr_type == "float" and self.rhs.expr_type == "float":
-            code = lhs_code + rhs_code
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, lhs_output, rhs_output))
 
         elif self.lhs.expr_type == "int" and self.rhs.expr_type == "float":
-            code = lhs_code + rhs_code
-            code += "ITOR %s %s\n" % (lhs_output, lhs_output)
-
+            conversion_output = context.get_temp_var()
+            context.append_instruction(QuadInstruction("ITOR", conversion_output, lhs_output))
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, conversion_output, rhs_output))
 
         elif self.lhs.expr_type == "float" and self.rhs.expr_type == "int":
-            code = lhs_code + rhs_code
-            code += "ITOR %s %s\n" % (rhs_output, rhs_output)
-
+            conversion_output = context.get_temp_var()
+            context.append_instruction(QuadInstruction("ITOR", conversion_output, rhs_output))
             output = context.get_temp_var()
 
             inst = NRelExpression.op_inst_map[self.op][1]
-            code += "%s %s %s %s\n" % (inst, output, lhs_output, rhs_output)
-
-            return (output, code)
+            return context.append_instruction(QuadInstruction(inst, output, lhs_output, conversion_output))
 
 
 
@@ -158,18 +151,21 @@ class NAndExpression(NExpression):
         self.expr_type = "int"
 
     def codegen(self, context):
-        lhs_output, lhs_code = self.lhs.codegen(context)
-        rhs_output, rhs_code = self.rhs.codegen(context)
+        # Generate code for expressions
+        lhs_index = self.lhs.codegen(context)
+        rhs_index = self.rhs.codegen(context)
+
+        # Retrieve output variables
+        lhs_output = context.get_instruction(lhs_index).a
+        rhs_output = context.get_instruction(rhs_index).a
 
         add_output = context.get_temp_var()
-        add_code = "IADD %s %s %s\n" % (add_output, lhs_output, rhs_output)
+        add_index = context.append_instruction(QuadInstruction("IADD", add_output, lhs_output, rhs_output))
 
         and_output = context.get_temp_var()
-        and_code = "IEQL %s %s %d\n" % (and_output, add_output, 2)
+        and_index = context.append_instruction(QuadInstruction("IEQL", and_output, add_output, 2))
 
-        code = lhs_code + rhs_code + add_code + and_code
-
-        return (and_output, code)
+        return and_index
 
 class NOrExpression(NExpression):
     """
@@ -181,18 +177,22 @@ class NOrExpression(NExpression):
         self.expr_type = "int"
 
     def codegen(self, context):
-        lhs_output, lhs_code = self.lhs.codegen(context)
-        rhs_output, rhs_code = self.rhs.codegen(context)
+        # Generate code for expressions
+        lhs_index = self.lhs.codegen(context)
+        rhs_index = self.rhs.codegen(context)
+
+        # Retrieve output variables
+        lhs_output = context.get_instruction(lhs_index).a
+        rhs_output = context.get_instruction(rhs_index).a
 
         add_output = context.get_temp_var()
-        add_code = "IADD %s %s %s\n" % (add_output, lhs_output, rhs_output)
+        add_index = context.append_instruction(QuadInstruction("IADD", add_output, lhs_output, rhs_output))
 
         or_output = context.get_temp_var()
-        or_code = "IGRT %s %s %d\n" % (or_output, add_output, 0)
+        or_index = context.append_instruction(QuadInstruction("IGRT", or_output, add_output, 0))
 
-        code = lhs_code + rhs_code + add_code + or_code
+        return or_index
 
-        return (or_output, code)
 
 class NNegationExpression(NExpression):
     def __init__(self, expression):
@@ -200,16 +200,17 @@ class NNegationExpression(NExpression):
         self.expr_type = expression.expr_type
 
     def codegen(self, context):
-        expr_output, expr_code = self.expression.codegen(context)
+        expr_index = self.expression.codegen(context)
+        expr_output = context.get_instruction(expr_index).a
 
         output = context.get_temp_var()
 
         if self.expression.expr_type == "int":
-            code = expr_code + "ISUB %s %d %s" % (output, 0, expr_output)
+            index = context.append_instruction(QuadInstruction("ISUB", output, 0, expr_output))
         elif self.expression.expr_type == "float":
-            code = expr_code + "RSUB %s %d %s" % (output, 0, expr_output)
+            index = context.append_instruction(QuadInstruction("RSUB", output, 0, expr_output))
 
-        return (output, code)
+        return index
 
 class NIdentifier(NExpression):
     def __init__(self, ident_type, ident):
@@ -223,11 +224,11 @@ class NIdentifier(NExpression):
         output_var = context.get_temp_var()
 
         if self.expr_type == "int":
-            code = "IASN %s %s\n" % (output_var, self.ident)
+            index = context.append_instruction(QuadInstruction("IASN", output_var, self.ident))
         else:
-            code = "RASN %s %s\n" % (output_var, self.ident)
+            index = context.append_instruction(QuadInstruction("RASN", output_var, self.ident))
 
-        return (output_var, code)
+        return index
 
 class NInteger(NExpression):
     def __init__(self, value):
@@ -240,9 +241,8 @@ class NInteger(NExpression):
 
     def codegen(self, context):
         output_var = context.get_temp_var()
-        code = "IASN %s %d\n" % (output_var, self.value)
+        return context.append_instruction(QuadInstruction("IASN", output_var, self.value))
 
-        return (output_var, code)
 
 class NFloat(NExpression):
     def __init__(self, value):
@@ -255,9 +255,7 @@ class NFloat(NExpression):
 
     def codegen(self, context):
         output_var = context.get_temp_var()
-        code = "RASN %s %d\n" % (output_var, self.value)
-
-        return (output_var, code)
+        return context.append_instruction(QuadInstruction("RASN", output_var, self.value))
 
 class NProgram(Node):
     def __init__(self, program_name, declare_list, statement_list):
@@ -267,6 +265,13 @@ class NProgram(Node):
 
     def __repr__(self):
         return "<NProgram \"%s\">" % self.program_name
+
+    def codegen(self, context):
+        for stmt in self.statement_list:
+            stmt.codegen(context)
+
+        # Append a halt instruction
+        context.append_instruction(QuadInstruction("HALT"))
 
 class NDeclareList(Node):
     def __init__(self, var_list, const_list):
@@ -299,30 +304,35 @@ class NAssignStatement(NStatement):
         self.expression = expression
 
     def codegen(self, context):
-        expr_output, expr_code = self.expression.codegen(context)
+        expr_index = self.expression.codegen(context)
+        expr_output = context.get_instruction(expr_index).a
 
         # This assumes that incorrect assignments (int := float) have been discarded in the parsing stage
         if self.ident.expr_type == "int":
-            return expr_code + "IASN %s %s\n" % (self.ident.ident, expr_output)
+            return context.append_instruction(QuadInstruction("IASN", self.ident.ident, expr_output))
         else:
             if self.expression.expr_type == "float":
-                return expr_code + "RASN %s %s\n" % (self.ident.ident, expr_output)
+                return context.append_instruction(QuadInstruction("RASN", self.ident.ident, expr_output))
             else:
                 # float := int assignment means we have to perform an ITOR on the expr_output
-                return expr_code + "ITOR %s %s\n" % (self.expr_output, self.expr_output) \
-                                 + "RASN %s %s\n" % (self.ident.ident, self.expr_output)
+                conversion_output = context.get_temp_var()
+                itor_index = context.append_instruction(QuadInstruction("ITOR", conversion_output, expr_output))
+                rasn_index = context.append_instruction(QuadInstruction("RASN", self.ident.ident, conversion_output))
+
+                return itor_index
 
 class NWriteStatement(NStatement):
     def __init__(self, expression):
         self.expression = expression
 
     def codegen(self, context):
-        expr_output, expr_code = self.expression.codegen(context)
+        expr_index = self.expression.codegen(context)
+        expr_output = context.get_instruction(expr_index).a
 
         if self.expression.expr_type == "int":
-            return expr_code + ("IPRT %s\n" % expr_output)
+            return context.append_instruction(QuadInstruction("IPRT", expr_output))
         else:
-            return expr_code + ("RPRT %s\n" % expr_output)
+            return context.append_instruction(QuadInstruction("IPRT", expr_output))
 
 class NReadStatement(NStatement):
     def __init__(self, ident):
@@ -330,9 +340,9 @@ class NReadStatement(NStatement):
 
     def codegen(self, context):
         if self.ident.expr_type == "int":
-            return "IINP %s\n" % self.ident.ident
+            return context.append_instruction(QuadInstruction("IPRT", self.ident.ident))
         else:
-            return "RINP %s\n" % self.ident.ident
+            return context.append_instruction(QuadInstruction("IPRT", self.ident.ident))
 
 class NTypeConversionStatement(NStatement):
     def __init__(self, ident, dest_type, expression):
@@ -341,12 +351,13 @@ class NTypeConversionStatement(NStatement):
         self.expression = expression
 
     def codegen(self, context):
-        expr_output, expr_code = self.expression.codegen(context)
+        expr_index = self.expression.codegen(context)
+        expr_output = context.get_instruction(expr_index)
 
         if self.dest_type == "int":
-            return expr_code + "RTOI %s %s\n" % (self.ident.ident, expr_output)
+            return context.append_instruction(QuadInstruction("RTOI", self.ident.ident, expr_output))
         else:
-            return expr_code + "ITOR %s %s\n" % (self.ident.ident, expr_output)
+            return context.append_instruction(QuadInstruction("ITOR", self.ident.ident, expr_output))
 
 
 class NIfStatement(NStatement):
@@ -355,10 +366,60 @@ class NIfStatement(NStatement):
         self.then_statements = then_statements
         self.otherwise_statements = otherwise_statements
 
+    def codegen(self, context):
+        # Generate code for evaluating the test expression
+        expr_index = self.test_expression.codegen(context)
+        expr_output = context.get_instruction(expr_index).a
+
+        # Generate a conditional jump that tests the expression output
+        jmpz_index = context.append_instruction(QuadInstruction("JMPZ", -1, expr_output))
+
+        # Generate code for then statements
+        then_statements_indices = []
+        for stmt in self.then_statements:
+            then_statements_indices.append(stmt.codegen(context))
+
+        otherwise_statements_indices = []
+        for stmt in self.otherwise_statements:
+            otherwise_statements_indices.append(stmt.codegen(context))
+
+        # Backpatch the JMPZ instruction
+        # If the 'then' block has instructions, the jump should be to the instruction directly after the last one
+        if then_statements_indices:
+            context.get_instruction(jmpz_index).b = then_statements_indices[-1] + 1
+        else:
+            context.get_instruction(jmpz_index).b = jmpz_index + 1
+
+        # Always return the index of the first instruction generated
+        return expr_index
+
+
 class NWhileStatement(NStatement):
     def __init__(self, test_expression, body_statements):
         self.test_expression = test_expression
         self.body_statements = body_statements
+
+    def codegen(self, context):
+        # Generate code for evaluating the test expression
+        expr_index = self.test_expression.codegen(context)
+        expr_output = context.get_instruction(expr_index).a
+
+        # Generate a conditional jump that tests the expression output
+        jmpz_index = context.append_instruction(QuadInstruction("JMPZ", -1, expr_output))
+
+        # Generate code for loop body
+        body_statements_indices = []
+        for stmt in self.body_statements:
+            body_statements_indices.append(stmt.codegen(context))
+
+        # Unconditionally jump to test expression evaluation
+        jump_index = context.append_instruction(QuadInstruction("JUMP", expr_index))
+
+        # Backpatch the jmpz instruction
+        context.get_instruction(jmpz_index).b = jump_index + 1
+
+        # Always return index of first inst.
+        return expr_index
 
 class NFromStatement(NStatement):
     def __init__(self, start_assignment, test_expression, step_statement, body_statements):
@@ -366,3 +427,30 @@ class NFromStatement(NStatement):
         self.test_expression = test_expression
         self.step_statement = step_statement
         self.body_statements = body_statements
+
+    def codegen(self, context):
+        # Generate code for the start assignment
+        start_index = self.start_assignment.codegen(context)
+
+        # Generate code for evaluating the test expression
+        expr_index = self.test_expression.codegen(context)
+        expr_output = context.get_instruction(expr_index).a
+
+        # Generate a conditional jump that tests expression output
+        jmpz_index = context.append_instruction(QuadInstruction("JMPZ", -1, expr_output))
+
+        # Generate code for loop body
+        body_statements_indices = []
+        for stmt in self.body_statements:
+            body_statements_indices.append(stmt.codegen(context))
+
+        # Generate the step statement
+        step_index = self.step_statement.codegen(context)
+
+        # Unconditionally jump to the test expression
+        jump_index = context.append_instruction(QuadInstruction("JUMP", expr_index))
+
+        # Backpatch the jmpz instruction
+        context.get_instruction(jmpz_index).b = jump_index + 1
+
+        return expr_index

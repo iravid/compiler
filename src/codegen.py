@@ -4,6 +4,7 @@ class CodegenContext(object):
     def __init__(self):
         self.symbols = {}
         self.root = None
+        self.instructions = []
         self._temp_counter = 0
 
     def install_symbol(self, ident, value):
@@ -20,5 +21,28 @@ class CodegenContext(object):
         self._temp_counter += 1
 
         return var
+
+    def get_instruction(self, index):
+        return self.instructions[index]
+
+    def append_instruction(self, instruction):
+        self.instructions.append(instruction)
+        return len(self.instructions) - 1
+
+    def get_code(self):
+        return "\n".join(map(lambda i: str(i), self.instructions))
+
+class QuadInstruction(object):
+    def __init__(self, inst, a="", b="", c=""):
+        self.inst = inst
+        self.a = a
+        self.b = b
+        self.c = c
+
+    def __str__(self):
+        return "%s %s %s %s" % (self.inst, self.a, self.b, self.c)
+
+    def __repr__(self):
+        return self.__str__()
 
 context = CodegenContext()
