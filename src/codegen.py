@@ -14,7 +14,7 @@ class CodegenContext(object):
         return ident in self.symbols
 
     def get_symbol(self, ident):
-        return self.symbols[ident]
+        return self.symbols.get(ident, None)
 
     def get_temp_var(self):
         var = "_t%d" % self._temp_counter

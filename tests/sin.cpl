@@ -10,7 +10,7 @@ define
 
 
   read (input);
-  input := input*3.14159/180;
+  input := abc*3.14159/180;
   prevsine := 0;
   cursine := input;
   loopnum := 1;

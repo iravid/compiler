@@ -102,4 +102,8 @@ def t_COMMENT(t):
     r'//[^\n]*\n|/[*](.|\n)*?[*]/'
     t.lexer.lineno += t.value.count('\n')
 
+def t_error(t):
+    print "Bad character '%s'" % t.value[0]
+    t.lexer.skip(1)
+
 lexer = lex.lex()

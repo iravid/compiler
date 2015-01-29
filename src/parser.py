@@ -86,6 +86,11 @@ def p_type_error(p):
     """type : error"""
     print "Line %d: invalid type" % p.lineno(1)
 
+def p_stmt_list_error(p):
+    """stmt_list : stmt_list error"""
+    print "Line %d: error in statement" % p.lineno(2)
+    p[0] = p[1]
+
 def p_stmt_list(p):
     """stmt_list : stmt_list stmt
                 | empty"""
@@ -107,10 +112,6 @@ def p_stmt(p):
     else:
         p[0] = [p[1]]
 
-def p_stmt_error(p):
-    """stmt : error"""
-    print "Line %d: error in statement" % p.lineno(1)
-
 def p_stmt_block(p):
     """stmt_block : LCURLPAREN stmt_list RCURLPAREN"""
     p[0] = p[2]
@@ -119,10 +120,17 @@ def p_write_stmt(p):
     "write_stmt : WRITE LPAREN expression RPAREN SEMICOLON"
     p[0] = ast.NWriteStatement(p[3])
 
+def p_write_stmt_error(p):
+    "write_stmt : WRITE LPAREN error RPAREN SEMICOLON"
+    print "Line %d: bad expression" % p.lineno(3)
+
 def p_read_stmt(p):
     "read_stmt : READ LPAREN ID RPAREN SEMICOLON"
     symbol = context.get_symbol(p[3])
 
+    if not symbol:
+        print "Line %d: invalid identifier" % p.lineno(1)
+        raise SyntaxError
     if type(symbol) != ast.NIdentifier:
         print "Line %d: trying to read into a constant" % p.lineno(1)
         raise SyntaxError
@@ -133,21 +141,40 @@ def p_assignment_stmt(p):
     "assignment_stmt : ID ASSIGN expression SEMICOLON"
     symbol = context.get_symbol(p[1])
 
+    if not symbol:
+        print "Line %d: invalid identifier" % p.lineno(1)
+        raise SyntaxError
     if type(symbol) != ast.NIdentifier:
         print "Line %d: trying to assign into a constant" % p.lineno(1)
         raise SyntaxError
 
     p[0] = ast.NAssignStatement(symbol, p[3])
 
+def p_assignment_stmt_error(p):
+    "assignment_stmt : ID ASSIGN error SEMICOLON"
+    print "Line %d: bad expression" % p.lineno(3)
+
 def p_type_conversion_stmt(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
                             | ID ASSIGN RVAL LPAREN expression RPAREN SEMICOLON"""
     symbol = context.get_symbol(p[1])
 
+    if not symbol:
+        print "Line %d: invalid identifier" % p.lineno(1)
+        raise SyntaxError
+    if type(symbol) != ast.NIdentifier:
+        print "Line %d: error trying to assign value to constant" % p.lineno(1)
+        raise SyntaxError
+
     if p[3] == "ival":
         p[0] = ast.NTypeConversionStatement(symbol, "int", p[5])
     elif p[3] == "rval":
         p[0] = ast.NTypeConversionStatement(symbol, "float", p[5])
+
+def p_type_conversion_stmt_error(p):
+    """type_conversion_stmt : ID ASSIGN IVAL LPAREN error RPAREN SEMICOLON
+                            | ID ASSIGN RVAL LPAREN error RPAREN SEMICOLON"""
+    print "Line %d: bad expression" % p.lineno(5)
 
 def p_control_stmt(p):
     """control_stmt : IF LPAREN boolexpr RPAREN THEN stmt OTHERWISE stmt
@@ -160,6 +187,12 @@ def p_control_stmt(p):
     elif p[1] == "from":
         p[0] = ast.NFromStatement(p[2], p[4], p[6], p[8])
 
+def p_control_stmt_error_expr(p):
+    """control_stmt : IF LPAREN error RPAREN THEN stmt OTHERWISE stmt
+                    | WHILE LPAREN error RPAREN DO stmt
+                    | FROM assignment_stmt TO error WHEN step DO stmt"""
+    print "Line %d: error in test expression" % p.lineno(1)
+
 def p_step(p):
     """step : ID ASSIGN ID addop number
             | ID ASSIGN ID mulop number"""
@@ -167,6 +200,12 @@ def p_step(p):
     lhs_symbol = context.get_symbol(p[1])
     rhs_symbol = context.get_symbol(p[3])
 
+    if not lhs_symbol:
+        print "Line %d: invalid identifier" % p.lineno(1)
+        raise SyntaxError
+    if not rhs_symbol:
+        print "Line %d: invalid identifier" % p.lineno(3)
+        raise SyntaxError
     if type(lhs_symbol) != ast.NIdentifier:
         print "Line %d: error trying to assign value to constant" % p.lineno(1)
         raise SyntaxError
@@ -195,10 +234,6 @@ def p_boolexpr(p):
         p[0] = p[1]
     elif len(p) == 4:
         p[0] = ast.NOrExpression(p[1], p[3])
-
-def p_boolexpr_error(p):
-    """boolexpr : error"""
-    print "Line %d: error in boolean expression" % p.lineno(1)
 
 def p_boolterm(p):
     """boolterm : boolterm AND boolfactor
@@ -244,10 +279,6 @@ def p_expression(p):
     elif len(p) == 2:
         p[0] = p[1]
 
-def p_expression_error(p):
-    """expression : error"""
-    print "Line %d: bad expression" % p.lineno(1)
-
 def p_term(p):
     """term : term mulop factor
             | factor"""
@@ -264,12 +295,22 @@ def p_factor(p):
         p[0] = p[2]
     else:
         if type(p[1]) is str:
-            p[0] = context.get_symbol(p[1])
+            symbol = context.get_symbol(p[1])
+
+            if not symbol:
+                print "Line %d: invalid identifier" % p.lineno(1)
+                raise SyntaxError
+
+            p[0] = symbol
         else:
             p[0] = p[1]
 
 def p_empty(p):
     """empty : """
     pass
+
+def p_error(p):
+    print "Syntax error at token %s" % p.type
+    parser.errok()
 
 parser = yacc.yacc()
