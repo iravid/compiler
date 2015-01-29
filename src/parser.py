@@ -36,7 +36,6 @@ def p_declarelist_varlist(p):
         p[1].append(ast.NVarDecl(p[2], p[4]))
         p[0] = p[1]
 
-
 def p_declarelist_constlist(p):
     """declarelist : declarelist ctype ID CONSTASSIGN number SEMICOLON
                    | ctype ID CONSTASSIGN number SEMICOLON"""
@@ -56,6 +55,10 @@ def p_number(p):
     elif type(p[1]) in (int, long):
         p[0] = ast.NInteger(p[1])
 
+def p_number_error(p):
+    """number : error"""
+    print "Line %d: invalid number literal" % p.lineno(1)
+
 def p_idents(p):
     """idents : idents COMMA ID
               | ID"""
@@ -65,6 +68,11 @@ def p_idents(p):
         p[1].append(p[3])
         p[0] = p[1]
 
+def p_idents_errors(p):
+    """idents : error COMMA ID
+              | error"""
+    print "Line %d: invalid identifier" % p.lineno(1)
+
 def p_ctype(p):
     "ctype : CONST type"
     p[0] = p[2]
@@ -73,6 +81,10 @@ def p_type(p):
     """type : INTDECL
             | FLOATDECL"""
     p[0] = p[1]
+
+def p_type_error(p):
+    """type : error"""
+    print "Line %d: invalid type" % p.lineno(1)
 
 def p_stmt_list(p):
     """stmt_list : stmt_list stmt
@@ -95,6 +107,10 @@ def p_stmt(p):
     else:
         p[0] = [p[1]]
 
+def p_stmt_error(p):
+    """stmt : error"""
+    print "Line %d: error in statement" % p.lineno(1)
+
 def p_stmt_block(p):
     """stmt_block : LCURLPAREN stmt_list RCURLPAREN"""
     p[0] = p[2]
@@ -105,13 +121,23 @@ def p_write_stmt(p):
 
 def p_read_stmt(p):
     "read_stmt : READ LPAREN ID RPAREN SEMICOLON"
-    # TODO: check that the symbol is a variable and not a constant
-    p[0] = ast.NReadStatement(context.get_symbol(p[3]))
+    symbol = context.get_symbol(p[3])
+
+    if type(symbol) != ast.NIdentifier:
+        print "Line %d: trying to read into a constant" % p.lineno(1)
+        raise SyntaxError
+
+    p[0] = ast.NReadStatement(symbol)
 
 def p_assignment_stmt(p):
     "assignment_stmt : ID ASSIGN expression SEMICOLON"
-    # TODO: check that the symbol is a variable and not a constant
-    p[0] = ast.NAssignStatement(context.get_symbol(p[1]), p[3])
+    symbol = context.get_symbol(p[1])
+
+    if type(symbol) != ast.NIdentifier:
+        print "Line %d: trying to assign into a constant" % p.lineno(1)
+        raise SyntaxError
+
+    p[0] = ast.NAssignStatement(symbol, p[3])
 
 def p_type_conversion_stmt(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
@@ -138,9 +164,12 @@ def p_step(p):
     """step : ID ASSIGN ID addop number
             | ID ASSIGN ID mulop number"""
 
-    # TODO: type check the lhs symbol
     lhs_symbol = context.get_symbol(p[1])
     rhs_symbol = context.get_symbol(p[3])
+
+    if type(lhs_symbol) != ast.NIdentifier:
+        print "Line %d: error trying to assign value to constant" % p.lineno(1)
+        raise SyntaxError
 
     if p[4] in ("+", "-"):
         expr = ast.NAddExpression(p[4], rhs_symbol, p[5])
@@ -166,6 +195,10 @@ def p_boolexpr(p):
         p[0] = p[1]
     elif len(p) == 4:
         p[0] = ast.NOrExpression(p[1], p[3])
+
+def p_boolexpr_error(p):
+    """boolexpr : error"""
+    print "Line %d: error in boolean expression" % p.lineno(1)
 
 def p_boolterm(p):
     """boolterm : boolterm AND boolfactor
@@ -210,6 +243,10 @@ def p_expression(p):
         p[0] = ast.NAddExpression(p[2], p[1], p[3])
     elif len(p) == 2:
         p[0] = p[1]
+
+def p_expression_error(p):
+    """expression : error"""
+    print "Line %d: bad expression" % p.lineno(1)
 
 def p_term(p):
     """term : term mulop factor
