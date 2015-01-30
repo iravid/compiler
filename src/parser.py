@@ -71,6 +71,7 @@ def p_idents(p):
 def p_idents_errors(p):
     """idents : error COMMA ID
               | error"""
+    context.set_errors(True)
     print "Line %d: invalid identifier" % p.lineno(1)
 
 def p_ctype(p):
@@ -84,10 +85,12 @@ def p_type(p):
 
 def p_type_error(p):
     """type : error"""
+    context.set_errors(True)
     print "Line %d: invalid type" % p.lineno(1)
 
 def p_stmt_list_error(p):
     """stmt_list : stmt_list error"""
+    context.set_errors(True)
     print "Line %d: error in statement" % p.lineno(2)
     p[0] = p[1]
 
@@ -122,6 +125,7 @@ def p_write_stmt(p):
 
 def p_write_stmt_error(p):
     "write_stmt : WRITE LPAREN error RPAREN SEMICOLON"
+    context.set_errors(True)
     print "Line %d: bad expression" % p.lineno(3)
 
 def p_read_stmt(p):
@@ -152,6 +156,7 @@ def p_assignment_stmt(p):
 
 def p_assignment_stmt_error(p):
     "assignment_stmt : ID ASSIGN error SEMICOLON"
+    context.set_errors(True)
     print "Line %d: bad expression" % p.lineno(3)
 
 def p_type_conversion_stmt(p):
@@ -174,6 +179,7 @@ def p_type_conversion_stmt(p):
 def p_type_conversion_stmt_error(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN error RPAREN SEMICOLON
                             | ID ASSIGN RVAL LPAREN error RPAREN SEMICOLON"""
+    context.set_errors(True)
     print "Line %d: bad expression" % p.lineno(5)
 
 def p_control_stmt(p):
@@ -191,6 +197,7 @@ def p_control_stmt_error_expr(p):
     """control_stmt : IF LPAREN error RPAREN THEN stmt OTHERWISE stmt
                     | WHILE LPAREN error RPAREN DO stmt
                     | FROM assignment_stmt TO error WHEN step DO stmt"""
+    context.set_errors(True)
     print "Line %d: error in test expression" % p.lineno(1)
 
 def p_step(p):
@@ -310,7 +317,6 @@ def p_empty(p):
     pass
 
 def p_error(p):
-    print "Syntax error at token %s" % p.type
-    parser.errok()
+    pass
 
 parser = yacc.yacc()
