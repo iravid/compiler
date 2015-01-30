@@ -91,7 +91,6 @@ def p_type_error(p):
 def p_stmt_list_error(p):
     """stmt_list : stmt_list error"""
     context.set_errors(True)
-    print "Line %d: error in statement" % p.lineno(2)
     p[0] = p[1]
 
 def p_stmt_list(p):
@@ -134,9 +133,11 @@ def p_read_stmt(p):
 
     if not symbol:
         print "Line %d: invalid identifier" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
         print "Line %d: trying to read into a constant" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
 
     p[0] = ast.NReadStatement(symbol)
@@ -147,9 +148,11 @@ def p_assignment_stmt(p):
 
     if not symbol:
         print "Line %d: invalid identifier" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
         print "Line %d: trying to assign into a constant" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
 
     p[0] = ast.NAssignStatement(symbol, p[3])
@@ -166,9 +169,11 @@ def p_type_conversion_stmt(p):
 
     if not symbol:
         print "Line %d: invalid identifier" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
         print "Line %d: error trying to assign value to constant" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
 
     if p[3] == "ival":
@@ -209,12 +214,15 @@ def p_step(p):
 
     if not lhs_symbol:
         print "Line %d: invalid identifier" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
     if not rhs_symbol:
         print "Line %d: invalid identifier" % p.lineno(3)
+        context.set_errors(True)
         raise SyntaxError
     if type(lhs_symbol) != ast.NIdentifier:
         print "Line %d: error trying to assign value to constant" % p.lineno(1)
+        context.set_errors(True)
         raise SyntaxError
 
     if p[4] in ("+", "-"):
@@ -306,6 +314,7 @@ def p_factor(p):
 
             if not symbol:
                 print "Line %d: invalid identifier" % p.lineno(1)
+                context.set_errors(True)
                 raise SyntaxError
 
             p[0] = symbol
