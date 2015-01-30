@@ -23,11 +23,11 @@ class CodegenContext(object):
         return var
 
     def get_instruction(self, index):
-        return self.instructions[index]
+        return self.instructions[index - 1]
 
     def append_instruction(self, instruction):
         self.instructions.append(instruction)
-        return len(self.instructions) - 1
+        return len(self.instructions)
 
     def get_code(self):
         return "\n".join(map(lambda i: str(i), self.instructions))
