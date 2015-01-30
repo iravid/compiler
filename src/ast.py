@@ -273,7 +273,7 @@ class NConstDecl(Node):
         return "<NConstDecl, type \"%s\", ident \"%s\", value %s" % (self.const_type, self.const_ident, self.const_value)
 
 class NStatement(Node):
-    # Codegen on statements returns the index of the first instruction generated
+    # Codegen on statements returns (first instruction index, last instruction index)
     pass
 
 class NAssignStatement(NStatement):
@@ -286,17 +286,17 @@ class NAssignStatement(NStatement):
 
         # This assumes that incorrect assignments (int := float) have been discarded in the parsing stage
         if self.ident.expr_type == "int":
-            context.append_instruction(QuadInstruction("IASN", self.ident.ident, expr_output))
+            last_index = context.append_instruction(QuadInstruction("IASN", self.ident.ident, expr_output))
         else:
             if self.expression.expr_type == "float":
-                context.append_instruction(QuadInstruction("RASN", self.ident.ident, expr_output))
+                last_index = context.append_instruction(QuadInstruction("RASN", self.ident.ident, expr_output))
             else:
                 # float := int assignment means we have to perform an ITOR on the expr_output
                 conversion_output = context.get_temp_var()
                 itor_index = context.append_instruction(QuadInstruction("ITOR", conversion_output, expr_output))
-                rasn_index = context.append_instruction(QuadInstruction("RASN", self.ident.ident, conversion_output))
+                last_index = context.append_instruction(QuadInstruction("RASN", self.ident.ident, conversion_output))
 
-        return expr_index
+        return expr_index, last_index
 
 class NWriteStatement(NStatement):
     def __init__(self, expression):
@@ -306,11 +306,11 @@ class NWriteStatement(NStatement):
         expr_index, expr_output = self.expression.codegen(context)
 
         if self.expression.expr_type == "int":
-            context.append_instruction(QuadInstruction("IPRT", expr_output))
+            last_index = context.append_instruction(QuadInstruction("IPRT", expr_output))
         else:
-            context.append_instruction(QuadInstruction("RPRT", expr_output))
+            last_index = context.append_instruction(QuadInstruction("RPRT", expr_output))
 
-        return expr_index
+        return expr_index, last_index
 
 
 class NReadStatement(NStatement):
@@ -319,9 +319,11 @@ class NReadStatement(NStatement):
 
     def codegen(self, context):
         if self.ident.expr_type == "int":
-            return context.append_instruction(QuadInstruction("IINP", self.ident.ident))
+            index = context.append_instruction(QuadInstruction("IINP", self.ident.ident))
         else:
-            return context.append_instruction(QuadInstruction("RINP", self.ident.ident))
+            index = context.append_instruction(QuadInstruction("RINP", self.ident.ident))
+
+        return index, index
 
 class NTypeConversionStatement(NStatement):
     def __init__(self, ident, dest_type, expression):
@@ -333,11 +335,11 @@ class NTypeConversionStatement(NStatement):
         expr_index, expr_output = self.expression.codegen(context)
 
         if self.dest_type == "int":
-            context.append_instruction(QuadInstruction("RTOI", self.ident.ident, expr_output))
+            last_index = context.append_instruction(QuadInstruction("RTOI", self.ident.ident, expr_output))
         else:
-            context.append_instruction(QuadInstruction("ITOR", self.ident.ident, expr_output))
+            last_index = context.append_instruction(QuadInstruction("ITOR", self.ident.ident, expr_output))
 
-        return expr_index
+        return expr_index, last_index
 
 class NIfStatement(NStatement):
     def __init__(self, test_expression, then_statements, otherwise_statements):
@@ -370,7 +372,7 @@ class NIfStatement(NStatement):
         # Backpatch the JUMP that skips the otherwise block
         # If there's an 'otherwise' block, the jump should be to the instruction directly after the last one
         if otherwise_statements_indices:
-            context.get_instruction(skip_otherwise_jump_index).a = otherwise_statements_indices[-1] + 1
+            context.get_instruction(skip_otherwise_jump_index).a = otherwise_statements_indices[-1][1] + 1
         else:
             context.get_instruction(skip_otherwise_jump_index).a = skip_otherwise_jump_index + 1
 
@@ -413,7 +415,7 @@ class NFromStatement(NStatement):
 
     def codegen(self, context):
         # Generate code for the start assignment
-        start_index = self.start_assignment.codegen(context)
+        assign_start_index, assign_last_index = self.start_assignment.codegen(context)
 
         # Generate code for evaluating the test expression
         expr_index, expr_output = self.test_expression.codegen(context)
@@ -427,7 +429,7 @@ class NFromStatement(NStatement):
             body_statements_indices.append(stmt.codegen(context))
 
         # Generate the step statement
-        step_index = self.step_statement.codegen(context)
+        step_start_index, step_last_index = self.step_statement.codegen(context)
 
         # Unconditionally jump to the test expression
         jump_index = context.append_instruction(QuadInstruction("JUMP", expr_index))
