@@ -106,7 +106,7 @@ def t_NEWLINE(t):
     t.lexer.lineno += t.value.count("\n")
 
 def t_error(t):
-    logging.warning("Bad character '%s'", t.value[0])
+    logging.warning("Line %d: Skipping unexpected character '%s'", t.lexer.lineno, t.value[0])
     t.lexer.skip(1)
 
 lexer = lex.lex()

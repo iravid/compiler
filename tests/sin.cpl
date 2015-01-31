@@ -5,7 +5,7 @@ code sin
 /*********************************************************/
 {
 define
-  float: input, float, cursine, prevsine, loopnum;
+  float: input, cursine, prevsine, loopnum;
   float: power, sign;
 
 
