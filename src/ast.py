@@ -6,7 +6,7 @@ class Node(object):
     pass
 
 class NExpression(Node):
-    # Codegen interface should return (index_of_last_instruction, output_variable_name)
+    # Codegen interface should return (index_of_first_instruction, output_variable_name)
     pass
 
 class NBinaryExpression(NExpression):

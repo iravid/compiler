@@ -97,6 +97,7 @@ def t_INTEGER(t):
 # Ignore whitespace
 t_ignore = " \t"
 
+# Multiline-handling comment rule
 def t_COMMENT(t):
     r'//[^\n]*\n|/[*](.|\n)*?[*]/'
     t.lexer.lineno += t.value.count('\n')

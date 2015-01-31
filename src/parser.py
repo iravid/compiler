@@ -18,6 +18,7 @@ def p_declarations(p):
     """declarations : DEFINE declarelist
                   | empty"""
     if len(p) == 3:
+        # Filter out the variable declarations and constant declarations
         p[0] = ast.NDeclareList(filter(lambda d: isinstance(d, ast.NVarDecl), p[2]),
                                 filter(lambda d: isinstance(d, ast.NConstDecl), p[2]))
     else:
@@ -130,6 +131,7 @@ def p_stmt(p):
             | write_stmt
             | stmt_block"""
     if type(p[1]) == list:
+        # stmt_block results in the value of stmt_list, which is a list of statements
         p[0] = p[1]
     else:
         p[0] = [p[1]]
