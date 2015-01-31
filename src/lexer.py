@@ -97,13 +97,13 @@ def t_INTEGER(t):
 # Ignore whitespace
 t_ignore = " \t"
 
-def t_NEWLINE(t):
-    r"\n+"
-    t.lexer.lineno += t.value.count("\n")
-
 def t_COMMENT(t):
     r'//[^\n]*\n|/[*](.|\n)*?[*]/'
     t.lexer.lineno += t.value.count('\n')
+
+def t_NEWLINE(t):
+    r"\n+"
+    t.lexer.lineno += t.value.count("\n")
 
 def t_error(t):
     logging.warning("Bad character '%s'", t.value[0])

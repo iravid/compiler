@@ -72,12 +72,6 @@ def p_idents(p):
         p[1].append(p[3])
         p[0] = p[1]
 
-def p_idents_errors(p):
-    """idents : error COMMA ID
-              | error"""
-    context.set_errors(True)
-    logger.error("Line %d: invalid identifier", p.lineno(1))
-
 def p_ctype(p):
     "ctype : CONST type"
     p[0] = p[2]
@@ -136,11 +130,11 @@ def p_read_stmt(p):
     symbol = context.get_symbol(p[3])
 
     if not symbol:
-        logger.error("Line %d: invalid identifier", p.lineno(1))
+        logger.error("Line %d: invalid identifier '%s'", p.lineno(3), p[3])
         context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
-        logger.error("Line %d: trying to read into a constant", p.lineno(1))
+        logger.error("Line %d: trying to read into constant '%s'", p.lineno(3), p[3])
         context.set_errors(True)
         raise SyntaxError
 
@@ -151,11 +145,11 @@ def p_assignment_stmt(p):
     symbol = context.get_symbol(p[1])
 
     if not symbol:
-        logger.error("Line %d: invalid identifier", p.lineno(1))
+        logger.error("Line %d: invalid identifier '%s'", p.lineno(1), p[1])
         context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
-        logger.error("Line %d: trying to assign into a constant", p.lineno(1))
+        logger.error("Line %d: trying to assign into constant '%s'", p.lineno(1), p[1])
         context.set_errors(True)
         raise SyntaxError
 
@@ -172,11 +166,11 @@ def p_type_conversion_stmt(p):
     symbol = context.get_symbol(p[1])
 
     if not symbol:
-        logger.error("Line %d: invalid identifier", p.lineno(1))
+        logger.error("Line %d: invalid identifier '%s'", p.lineno(1), p[1])
         context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
-        logger.error("Line %d: error trying to assign value to constant", p.lineno(1))
+        logger.error("Line %d: error trying to assign value to constant '%s'", p.lineno(1), p[1])
         context.set_errors(True)
         raise SyntaxError
 
@@ -217,15 +211,15 @@ def p_step(p):
     rhs_symbol = context.get_symbol(p[3])
 
     if not lhs_symbol:
-        logger.error("Line %d: invalid identifier", p.lineno(1))
+        logger.error("Line %d: invalid identifier '%s'", p.lineno(1), p[1])
         context.set_errors(True)
         raise SyntaxError
     if not rhs_symbol:
-        logger.error("Line %d: invalid identifier", p.lineno(3))
+        logger.error("Line %d: invalid identifier '%s'", p.lineno(3), p[3])
         context.set_errors(True)
         raise SyntaxError
     if type(lhs_symbol) != ast.NIdentifier:
-        logger.error("Line %d: error trying to assign value to constant", p.lineno(1))
+        logger.error("Line %d: error trying to assign value to constant '%s'", p.lineno(1), p[1])
         context.set_errors(True)
         raise SyntaxError
 
@@ -317,7 +311,7 @@ def p_factor(p):
             symbol = context.get_symbol(p[1])
 
             if not symbol:
-                logger.error("Line %d: invalid identifier", p.lineno(1))
+                logger.error("Line %d: invalid identifier '%s'", p.lineno(1), p[1])
                 context.set_errors(True)
                 raise SyntaxError
 

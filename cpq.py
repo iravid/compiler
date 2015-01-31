@@ -44,11 +44,10 @@ def compile_cpl(cpl_filename):
     stderr_handler.setFormatter(formatter)
     lst_handler.setFormatter(formatter)
 
-    compile_logger.addHandler(stderr_handler)
     compile_logger.addHandler(lst_handler)
 
     # Start compilation
-    cpl_parser.parse("\n".join(cpl_data))
+    cpl_parser.parse("".join(cpl_data))
     if codegen_context.errors:
         logging.error("Errors during compilation. Exiting.")
         return 1
@@ -71,7 +70,7 @@ def compile_cpl(cpl_filename):
 
 if __name__ == "__main__":
     arg_parser = get_parser()
-    logging.basicConfig(format="%(levelname)s: %(message)s")
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     args = arg_parser.parse_args()
 
     ret = compile_cpl(args.cpl_file)
