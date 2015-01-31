@@ -5,6 +5,10 @@ from ply import yacc
 from lexer import tokens
 from codegen import context
 
+import logging
+
+logger = logging.getLogger("compile")
+
 def p_program(p):
     "program : CODE ID LCURLPAREN declarations stmt_list RCURLPAREN"
     p[0] = ast.NProgram(p[2], p[4], p[5])
@@ -57,7 +61,7 @@ def p_number(p):
 
 def p_number_error(p):
     """number : error"""
-    print "Line %d: invalid number literal" % p.lineno(1)
+    logger.error("Line %d: invalid number literal", p.lineno(1))
 
 def p_idents(p):
     """idents : idents COMMA ID
@@ -72,7 +76,7 @@ def p_idents_errors(p):
     """idents : error COMMA ID
               | error"""
     context.set_errors(True)
-    print "Line %d: invalid identifier" % p.lineno(1)
+    logger.error("Line %d: invalid identifier", p.lineno(1))
 
 def p_ctype(p):
     "ctype : CONST type"
@@ -86,7 +90,7 @@ def p_type(p):
 def p_type_error(p):
     """type : error"""
     context.set_errors(True)
-    print "Line %d: invalid type" % p.lineno(1)
+    logger.error("Line %d: invalid type", p.lineno(1))
 
 def p_stmt_list_error(p):
     """stmt_list : stmt_list error"""
@@ -125,18 +129,18 @@ def p_write_stmt(p):
 def p_write_stmt_error(p):
     "write_stmt : WRITE LPAREN error RPAREN SEMICOLON"
     context.set_errors(True)
-    print "Line %d: bad expression" % p.lineno(3)
+    logger.error("Line %d: bad expression", p.lineno(3))
 
 def p_read_stmt(p):
     "read_stmt : READ LPAREN ID RPAREN SEMICOLON"
     symbol = context.get_symbol(p[3])
 
     if not symbol:
-        print "Line %d: invalid identifier" % p.lineno(1)
+        logger.error("Line %d: invalid identifier", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
-        print "Line %d: trying to read into a constant" % p.lineno(1)
+        logger.error("Line %d: trying to read into a constant", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
 
@@ -147,11 +151,11 @@ def p_assignment_stmt(p):
     symbol = context.get_symbol(p[1])
 
     if not symbol:
-        print "Line %d: invalid identifier" % p.lineno(1)
+        logger.error("Line %d: invalid identifier", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
-        print "Line %d: trying to assign into a constant" % p.lineno(1)
+        logger.error("Line %d: trying to assign into a constant", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
 
@@ -160,7 +164,7 @@ def p_assignment_stmt(p):
 def p_assignment_stmt_error(p):
     "assignment_stmt : ID ASSIGN error SEMICOLON"
     context.set_errors(True)
-    print "Line %d: bad expression" % p.lineno(3)
+    logger.error("Line %d: bad expression", p.lineno(3))
 
 def p_type_conversion_stmt(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN expression RPAREN SEMICOLON
@@ -168,11 +172,11 @@ def p_type_conversion_stmt(p):
     symbol = context.get_symbol(p[1])
 
     if not symbol:
-        print "Line %d: invalid identifier" % p.lineno(1)
+        logger.error("Line %d: invalid identifier", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
     if type(symbol) != ast.NIdentifier:
-        print "Line %d: error trying to assign value to constant" % p.lineno(1)
+        logger.error("Line %d: error trying to assign value to constant", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
 
@@ -185,7 +189,7 @@ def p_type_conversion_stmt_error(p):
     """type_conversion_stmt : ID ASSIGN IVAL LPAREN error RPAREN SEMICOLON
                             | ID ASSIGN RVAL LPAREN error RPAREN SEMICOLON"""
     context.set_errors(True)
-    print "Line %d: bad expression" % p.lineno(5)
+    logger.error("Line %d: bad expression", p.lineno(5))
 
 def p_control_stmt(p):
     """control_stmt : IF LPAREN boolexpr RPAREN THEN stmt OTHERWISE stmt
@@ -203,7 +207,7 @@ def p_control_stmt_error_expr(p):
                     | WHILE LPAREN error RPAREN DO stmt
                     | FROM assignment_stmt TO error WHEN step DO stmt"""
     context.set_errors(True)
-    print "Line %d: error in test expression" % p.lineno(1)
+    logger.error("Line %d: error in test expression", p.lineno(1))
 
 def p_step(p):
     """step : ID ASSIGN ID addop number
@@ -213,15 +217,15 @@ def p_step(p):
     rhs_symbol = context.get_symbol(p[3])
 
     if not lhs_symbol:
-        print "Line %d: invalid identifier" % p.lineno(1)
+        logger.error("Line %d: invalid identifier", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
     if not rhs_symbol:
-        print "Line %d: invalid identifier" % p.lineno(3)
+        logger.error("Line %d: invalid identifier", p.lineno(3))
         context.set_errors(True)
         raise SyntaxError
     if type(lhs_symbol) != ast.NIdentifier:
-        print "Line %d: error trying to assign value to constant" % p.lineno(1)
+        logger.error("Line %d: error trying to assign value to constant", p.lineno(1))
         context.set_errors(True)
         raise SyntaxError
 
@@ -313,7 +317,7 @@ def p_factor(p):
             symbol = context.get_symbol(p[1])
 
             if not symbol:
-                print "Line %d: invalid identifier" % p.lineno(1)
+                logger.error("Line %d: invalid identifier", p.lineno(1))
                 context.set_errors(True)
                 raise SyntaxError
 

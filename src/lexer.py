@@ -2,6 +2,9 @@ __author__ = 'iravid'
 
 from ply import lex
 
+import logging
+logger = logging.getLogger("compile")
+
 reserved_words = {
     "code": "CODE",
     "const": "CONST",
@@ -103,7 +106,7 @@ def t_COMMENT(t):
     t.lexer.lineno += t.value.count('\n')
 
 def t_error(t):
-    print "Bad character '%s'" % t.value[0]
+    logging.warning("Bad character '%s'", t.value[0])
     t.lexer.skip(1)
 
 lexer = lex.lex()

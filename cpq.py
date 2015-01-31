@@ -27,10 +27,27 @@ def compile_cpl(cpl_filename):
         with open(lst_filename, "w") as lst_file:
             for index, line in enumerate(cpl_data):
                 lst_file.write("%d. %s" % (index + 1, line))
+
+            lst_file.write("Compile log:\n")
     except EnvironmentError, e:
         logging.critical("Could not open %s: %s", lst_filename, str(e))
         return 1
 
+    # Configure the compile logger to append error messages to the .lst file
+    compile_logger = logging.getLogger("compile")
+    compile_logger.setLevel(logging.WARNING)
+
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    lst_handler = logging.FileHandler(lst_filename)
+
+    formatter = logging.Formatter("%(levelname)s: %(message)s")
+    stderr_handler.setFormatter(formatter)
+    lst_handler.setFormatter(formatter)
+
+    compile_logger.addHandler(stderr_handler)
+    compile_logger.addHandler(lst_handler)
+
+    # Start compilation
     cpl_parser.parse("\n".join(cpl_data))
     if codegen_context.errors:
         logging.error("Errors during compilation. Exiting.")
@@ -54,6 +71,7 @@ def compile_cpl(cpl_filename):
 
 if __name__ == "__main__":
     arg_parser = get_parser()
+    logging.basicConfig(format="%(levelname)s: %(message)s")
     args = arg_parser.parse_args()
 
     ret = compile_cpl(args.cpl_file)
