@@ -29,12 +29,22 @@ def p_declarelist_varlist(p):
     if len(p) == 5:
         # Install symbols for each ident
         for ident in p[3]:
+            if context.get_symbol(ident):
+                logger.error("Line %d: redefined symbol '%s'", p.lineno(3), ident)
+                context.set_errors(True)
+                raise SyntaxError
+
             context.install_symbol(ident, ast.NIdentifier(p[1], ident))
 
         p[0] = [ast.NVarDecl(p[1], p[3])]
 
     elif len(p) == 6:
         for ident in p[4]:
+            if context.get_symbol(ident):
+                logger.error("Line %d: redefined symbol '%s'", p.lineno(4), ident)
+                context.set_errors(True)
+                raise SyntaxError
+
             context.install_symbol(ident, ast.NIdentifier(p[2], ident))
 
         p[1].append(ast.NVarDecl(p[2], p[4]))
@@ -44,9 +54,19 @@ def p_declarelist_constlist(p):
     """declarelist : declarelist ctype ID CONSTASSIGN number SEMICOLON
                    | ctype ID CONSTASSIGN number SEMICOLON"""
     if len(p) == 6:
+        if context.get_symbol(p[2]):
+            logger.error("Line %d: redefined constant symbol '%s'", p.lineno(2), p[2])
+            context.set_errors(True)
+            raise SyntaxError
+
         context.install_symbol(p[2], p[4])
         p[0] = [ast.NConstDecl(p[1], p[2], p[4])]
     elif len(p) == 7:
+        if context.get_symbol(p[3]):
+            logger.error("Line %d: redefined constant symbol '%s'", p.lineno(3), p[3])
+            context.set_errors(True)
+            raise SyntaxError
+
         context.install_symbol(p[3], p[5])
         p[1].append(ast.NConstDecl(p[2], p[3], p[5]))
         p[0] = p[1]
@@ -67,6 +87,8 @@ def p_idents(p):
     """idents : idents COMMA ID
               | ID"""
     if len(p) == 2:
+
+
         p[0] = [p[1]]
     elif len(p) == 4:
         p[1].append(p[3])
@@ -84,7 +106,7 @@ def p_type(p):
 def p_type_error(p):
     """type : error"""
     context.set_errors(True)
-    logger.error("Line %d: invalid type", p.lineno(1))
+    logger.error("Line %d: invalid type '%s'", p.lineno(1), p[1])
 
 def p_stmt_list_error(p):
     """stmt_list : stmt_list error"""
@@ -324,6 +346,8 @@ def p_empty(p):
     pass
 
 def p_error(p):
-    pass
+    logger.error("Line %d: Unexpected token '%s'", p.lineno, p.value)
+    context.set_errors(True)
+    parser.errok()
 
 parser = yacc.yacc()
