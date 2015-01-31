@@ -1,7 +1,7 @@
 __author__ = 'iravid'
 
 import ast
-from ply import yacc
+import yacc
 from lexer import tokens
 from codegen import context
 

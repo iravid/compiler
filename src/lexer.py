@@ -1,6 +1,6 @@
 __author__ = 'iravid'
 
-from ply import lex
+import lex
 
 import logging
 logger = logging.getLogger("compile")

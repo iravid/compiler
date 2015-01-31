@@ -15,6 +15,7 @@ def get_parser():
     return arg_parser
 
 def compile_cpl(cpl_filename):
+    logging.info("Reading %s", cpl_filename)
     try:
         cpl_data = open(cpl_filename).readlines()
     except EnvironmentError, e:
@@ -35,7 +36,7 @@ def compile_cpl(cpl_filename):
 
     # Configure the compile logger to append error messages to the .lst file
     compile_logger = logging.getLogger("compile")
-    compile_logger.setLevel(logging.WARNING)
+    compile_logger.setLevel(logging.INFO)
 
     stderr_handler = logging.StreamHandler(sys.stderr)
     lst_handler = logging.FileHandler(lst_filename)
@@ -47,6 +48,8 @@ def compile_cpl(cpl_filename):
     compile_logger.addHandler(lst_handler)
 
     # Start compilation
+    compile_logger.info("Compiled by a CPQ compiler written by Itamar Ravid")
+    logging.info("Compiling CPL code")
     cpl_parser.parse("".join(cpl_data))
     if codegen_context.errors:
         logging.error("Errors during compilation. Exiting.")
@@ -59,8 +62,10 @@ def compile_cpl(cpl_filename):
     qud_filename = os.path.basename(cpl_filename).split(".")[0] + ".qud"
     try:
         with open(qud_filename, "w") as qud_file:
+            logging.info("Writing out QUAD instructions to %s", qud_filename)
             quad_code = codegen_context.get_code()
             qud_file.write(quad_code)
+            qud_file.write("\n\nCompiled by a CPQ compiler written by Itamar Ravid\n")
     except EnvironmentError, e:
         logging.critical("Could not open %s: %s", qud_filename, str(e))
         return 1
@@ -70,8 +75,10 @@ def compile_cpl(cpl_filename):
 
 if __name__ == "__main__":
     arg_parser = get_parser()
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     args = arg_parser.parse_args()
+
+    logging.info("CPQ Compiler by Itamar Ravid")
 
     ret = compile_cpl(args.cpl_file)
     sys.exit(ret)
